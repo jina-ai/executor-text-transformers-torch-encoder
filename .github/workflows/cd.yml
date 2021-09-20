@@ -1,0 +1,29 @@
+name: CD
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  push-executors:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Get previous tag
+        id: previoustag
+        uses: "WyriHaximus/github-action-get-previous-tag@v1"
+        with:
+          fallback: ""
+      - name: push to Hubble
+        id: push_exec
+        uses: jina-ai/action-hubble-push@v1-alpha
+        with:
+          git_tag: ${{ steps.previoustag.outputs.tag }}
+      - run: echo push result ${{ steps.push_exec.outputs.exit_code}}
+        shell: bash
+

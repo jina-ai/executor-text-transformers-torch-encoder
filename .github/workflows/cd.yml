@@ -21,11 +21,12 @@ jobs:
           fallback: ""
       - name: push to Hubble
         id: push_exec
-        uses: jina-ai/action-hubble-push@v1-alpha.1
+        uses: jina-ai/action-hubble-push@v1-alpha.2
         with:
           git_tag: ${{ steps.previoustag.outputs.tag }}
         env:
-          token: ${{ secrets.GH_TOKEN }}
+          exec_uuid: ${{ secrets.UUID }}
+          exec_secret: ${{ secrets.SECRET }}
       - run: echo push result ${{ steps.push_exec.outputs.exit_code}}
         shell: bash
 

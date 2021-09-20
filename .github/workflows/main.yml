@@ -34,7 +34,7 @@ jobs:
         run: pytest -s -v -m "not gpu"
       - id: test_docker
         name: run docker tests
-        uses: actions/action-hubble-test-docker@v2
+        uses: jina-ai/action-hubble-test-docker@v2
       - run: echo test result ${{ steps.test_docker.outputs.exit_code}}
         shell: bash
 

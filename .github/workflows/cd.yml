@@ -21,7 +21,7 @@ jobs:
           fallback: ""
       - name: push to Hubble
         id: push_exec
-        uses: jina-ai/action-hubble-push@v1-alpha.3
+        uses: jina-ai/action-hubble-push@v1-alpha.4
         with:
           git_tag: ${{ steps.previoustag.outputs.tag }}
         env:

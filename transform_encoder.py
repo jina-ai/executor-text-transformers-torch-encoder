@@ -79,9 +79,9 @@ class TransformerTorchEncoder(Executor):
         :param kwargs: Additional key value arguments.
         """
         with torch.no_grad():
-            traversal_path = parameters.get('traversal_paths', self.traversal_paths)
+            traversal_paths = parameters.get('traversal_paths', self.traversal_paths)
             batch_size = parameters.get('batch_size', self.batch_size)
-            for batch in docs.batch(batch_size=batch_size, traversal_path=traversal_path, require_attr='text'):
+            for batch in docs.batch(batch_size=batch_size, traversal_paths=traversal_paths, require_attr='text'):
                 texts = batch.get_attributes('text')
                 input_tokens = self._generate_input_tokens(texts)
                 outputs = getattr(self.model, self.embedding_fn_name)(**input_tokens)

@@ -42,3 +42,27 @@ jobs:
       - run: echo test result ${{ steps.test_docker.outputs.exit_code}}
         shell: bash
 
+  gpu-tests:
+    runs-on: [self-hosted, gpu]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Build GPU docker image
+        run: docker build -t foo -f Dockerfile.gpu .
+      - name: Print image size
+        run: docker inspect foo | jq '.[0].Size' | numfmt --to=iec --suffix=B
+      - name: Start the container
+        run: |
+          docker run \
+            --entrypoint "" \
+            --name foo \
+            --gpus all \
+            -d foo tail -F /dev/null
+          echo "DOCKER_EXEC=docker exec foo" >> $GITHUB_ENV
+      - name: Run GPU tests in container
+        run: |
+          $DOCKER_EXEC pip install -r tests/requirements.txt
+          $DOCKER_EXEC python -m pytest -s -v -m "gpu and not docker" tests/
+      - name: Stop and remove the container
+        if: ${{ always() }}
+        run: docker stop $(docker ps -a -q) && docker rm foo

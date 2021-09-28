@@ -6,10 +6,7 @@ from typing import Dict, Iterable, Optional, Tuple
 import numpy as np
 import torch
 from jina import DocumentArray, Executor, requests
-from jina_commons.batching import get_docs_batch_generator
 from transformers import AutoModel, AutoTokenizer
-
-_DEFAULT_MODEL = 'sentence-transformers/distilbert-base-nli-stsb-mean-tokens'
 
 
 class TransformerTorchEncoder(Executor):
@@ -17,15 +14,15 @@ class TransformerTorchEncoder(Executor):
 
     def __init__(
         self,
-        pretrained_model_name_or_path: str = _DEFAULT_MODEL,
+        pretrained_model_name_or_path: str = 'sentence-transformers/all-mpnet-base-v2',
         base_tokenizer_model: Optional[str] = None,
         pooling_strategy: str = 'mean',
         layer_index: int = -1,
         max_length: Optional[int] = None,
         embedding_fn_name: str = '__call__',
         device: str = 'cpu',
-        default_traversal_paths: Iterable[str] = ('r',),
-        default_batch_size: int = 32,
+        traversal_paths: Iterable[str] = ('r',),
+        batch_size: int = 32,
         *args,
         **kwargs,
     ):
@@ -42,15 +39,15 @@ class TransformerTorchEncoder(Executor):
             default the max length supported by the model will be used.
         :param embedding_fn_name: Function to call on the model in order to get output
         :param device: Torch device to put the model on (e.g. 'cpu', 'cuda', 'cuda:1')
-        :param default_traversal_paths: Used in the encode method an define traversal on the
+        :param traversal_paths: Used in the encode method an define traversal on the
              received `DocumentArray`
-        :param default_batch_size: Defines the batch size for inference on the loaded
+        :param batch_size: Defines the batch size for inference on the loaded
             PyTorch model.
         """
         super().__init__(*args, **kwargs)
 
-        self.default_traversal_paths = default_traversal_paths
-        self.default_batch_size = default_batch_size
+        self.traversal_paths = traversal_paths
+        self.batch_size = batch_size
 
         base_tokenizer_model = base_tokenizer_model or pretrained_model_name_or_path
 
@@ -79,17 +76,19 @@ class TransformerTorchEncoder(Executor):
             `parameters={'traversal_paths': ['r'], 'batch_size': 10}`.
         :param kwargs: Additional key value arguments.
         """
-        for batch in get_docs_batch_generator(
-            docs,
-            traversal_path=parameters.get(
-                'traversal_paths', self.default_traversal_paths
-            ),
-            batch_size=parameters.get('batch_size', self.default_batch_size),
-            needs_attr='text',
-        ):
+        if docs is None:
+            return
+
+        docs_batch_generator = docs.batch(
+            traversal_paths=parameters.get('traversal_paths', self.traversal_paths),
+            batch_size=parameters.get('batch_size', self.batch_size),
+            require_attr='text',
+        )
+
+        for batch in docs_batch_generator:
             texts = batch.get_attributes('text')
 
-            with torch.no_grad():
+            with torch.inference_mode():
                 input_tokens = self._generate_input_tokens(texts)
                 outputs = getattr(self.model, self.embedding_fn_name)(**input_tokens)
                 if isinstance(outputs, torch.Tensor):

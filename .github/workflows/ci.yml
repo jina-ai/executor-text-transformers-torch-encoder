@@ -39,30 +39,24 @@ jobs:
       - id: test_docker
         name: run docker tests
         uses: jina-ai/action-hubble-test-docker@v5
-      - run: echo test result ${{ steps.test_docker.outputs.exit_code}}
-        shell: bash
 
   gpu-tests:
     runs-on: [self-hosted, gpu]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Build GPU docker image
-        run: docker build -t foo -f Dockerfile.gpu .
-      - name: Print image size
-        run: docker inspect foo | jq '.[0].Size' | numfmt --to=iec --suffix=B
-      - name: Start the container
+      - uses: actions/setup-python@v2
+        with:
+          python-version: "3.7"
+      - name: Install latest stable 2.x jina version
         run: |
-          docker run \
-            --entrypoint "" \
-            --name foo \
-            --gpus all \
-            -d foo tail -F /dev/null
-          echo "DOCKER_EXEC=docker exec foo" >> $GITHUB_ENV
-      - name: Run GPU tests in container
-        run: |
-          $DOCKER_EXEC pip install -r tests/requirements.txt
-          $DOCKER_EXEC python -m pytest -s -v -m "gpu and not docker" tests/
-      - name: Stop and remove the container
-        if: ${{ always() }}
-        run: docker stop $(docker ps -a -q) && docker rm foo
+          JINA_VERSION=$(curl -L -s "https://pypi.org/pypi/jina/json" \
+            |  jq  -r '.releases | keys | .[]
+              | select(contains("dev") | not)
+              | select(startswith("2."))' \
+            | sort -V | tail -1)
+          pip install git+https://github.com/jina-ai/jina.git@v${JINA_VERSION}
+      - name: Python requirements
+        run: pip install -r gpu_requirements.txt -r tests/requirements.txt
+      - name: Run GPU tests
+        run: python -m pytest -s -v -m "gpu"

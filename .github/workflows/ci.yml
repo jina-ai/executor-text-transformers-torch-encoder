@@ -39,6 +39,24 @@ jobs:
       - id: test_docker
         name: run docker tests
         uses: jina-ai/action-hubble-test-docker@v5
-      - run: echo test result ${{ steps.test_docker.outputs.exit_code}}
-        shell: bash
 
+  gpu-tests:
+    runs-on: [self-hosted, gpu]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: "3.7"
+      - name: Install latest stable 2.x jina version
+        run: |
+          JINA_VERSION=$(curl -L -s "https://pypi.org/pypi/jina/json" \
+            |  jq  -r '.releases | keys | .[]
+              | select(contains("dev") | not)
+              | select(startswith("2."))' \
+            | sort -V | tail -1)
+          pip install git+https://github.com/jina-ai/jina.git@v${JINA_VERSION}
+      - name: Python requirements
+        run: pip install -r gpu_requirements.txt -r tests/requirements.txt
+      - name: Run GPU tests
+        run: python -m pytest -s -v -m "gpu"

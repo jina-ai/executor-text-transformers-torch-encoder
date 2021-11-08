@@ -154,3 +154,13 @@ def test_quality_embeddings(basic_encoder: TransformerTorchEncoder):
     matches = ['B', 'A', 'D', 'C']
     for i, doc in enumerate(docs):
         assert doc.matches[1].id == matches[i]
+
+
+def test_bad_batch(basic_encoder):
+    docs = DocumentArray([Document(text=f'doc {i}') for i in range(10)])
+    docs[5].text = ''
+    basic_encoder.encode(docs, parameters={'batch_size': 3})
+    assert len(list(filter(lambda d: d.embedding is not None, docs))) == 9
+    for idx, d in enumerate(docs):
+        if idx != 5:
+            assert d.embedding.shape == (_EMBEDDING_DIM,)

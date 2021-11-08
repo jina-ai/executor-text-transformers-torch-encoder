@@ -4,29 +4,17 @@ on:
   push:
     branches:
       - main
+  release:
+    types:
+      - created
   workflow_dispatch:
+  # pull_request:
+  # uncomment the above to test CD in a PR
 
 jobs:
-  push-executors:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-      - name: Get previous tag
-        id: previoustag
-        uses: "WyriHaximus/github-action-get-previous-tag@v1"
-        with:
-          fallback: ""
-      - name: push to Hubble
-        id: push_exec
-        uses: jina-ai/action-hubble-push@v2
-        with:
-          git_tag: ${{ steps.previoustag.outputs.tag }}
-        env:
-          exec_uuid: ${{ secrets.UUID }}
-          exec_secret: ${{ secrets.SECRET }}
-      - run: echo push result ${{ steps.push_exec.outputs.exit_code}}
-        shell: bash
-
+  call-external:
+    uses: jina-ai/workflows-executors/.github/workflows/cd.yml@master
+    with:
+      event_name: ${{ github.event_name }}
+    secrets:
+      secret: ${{ secrets.SECRET }}

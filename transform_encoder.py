@@ -5,8 +5,10 @@ from typing import Dict, Iterable, Optional, Tuple
 
 import numpy as np
 import torch
-from jina import DocumentArray, Executor, requests
+
 from transformers import AutoModel, AutoTokenizer
+
+from jina import DocumentArray, Executor, requests
 
 
 class TransformerTorchEncoder(Executor):
@@ -65,7 +67,7 @@ class TransformerTorchEncoder(Executor):
         self.model.to(device).eval()
 
     @requests
-    def encode(self, docs: Optional[DocumentArray], parameters: Dict, **kwargs):
+    def encode(self, docs: Optional[DocumentArray], parameters: Dict={}, **kwargs):
         """
         Encode text data into a ndarray of `D` as dimension, and fill the embedding of
         each Document.
@@ -79,10 +81,11 @@ class TransformerTorchEncoder(Executor):
         if docs is None:
             return
 
-        docs_batch_generator = docs.batch(
+        docs_batch_generator = docs.traverse_flat(
             traversal_paths=parameters.get('traversal_paths', self.traversal_paths),
+            filter_fn=lambda doc: len(doc.text) > 0
+        ).batch(
             batch_size=parameters.get('batch_size', self.batch_size),
-            require_attr='text',
         )
 
         for batch in docs_batch_generator:

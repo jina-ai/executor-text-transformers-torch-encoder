@@ -33,7 +33,7 @@ from jina import Flow
 
 flow = Flow().add(
     uses='jinahub+docker://TransformerTorchEncoder',
-    volumes='/your_home_folder/.cache/huggingface:/root/.cache/huggingface'
+    volumes='.cache/huggingface:/root/.cache/huggingface'
 )
 ```
 
@@ -43,10 +43,10 @@ Alternatively, you can reference the docker image in the `yml` config and specif
 
 ```yaml
 jtype: Flow
-pods:
+executors:
   - name: encoder
     uses: 'jinahub+docker://TransformerTorchEncoder'
-    volumes: '/your_home_folder/.cache/huggingface:/root/.cache/huggingface'
+    volumes: '.cache/huggingface:/root/.cache/huggingface'
 ```
 
 And then use it like so:
@@ -99,4 +99,4 @@ with f:
 ```
 
 ## Reference
-- [huggingface](https://huggingface.co/models)
+- [Huggingface Transformers](https://huggingface.co/transformers/pretrained_models.html)

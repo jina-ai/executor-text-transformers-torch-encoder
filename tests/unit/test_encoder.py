@@ -102,7 +102,7 @@ def test_pooling_strategy(pooling_strategy: str):
     'traversal_paths, counts',
     [
         ('r', [['r', 1], ['c', 0], ['cc', 0]]),
-        ('r', [['r', 0], ['c', 3], ['cc', 0]]),
+        ('c', [['r', 0], ['c', 3], ['cc', 0]]),
         ('cc', [['r', 0], ['c', 0], ['cc', 2]]),
         ('cc,r', [['r', 1], ['c', 0], ['cc', 2]]),
     ],

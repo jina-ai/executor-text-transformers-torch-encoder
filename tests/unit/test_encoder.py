@@ -101,14 +101,14 @@ def test_pooling_strategy(pooling_strategy: str):
 @pytest.mark.parametrize(
     'traversal_paths, counts',
     [
-        (['r'], [['r', 1], ['c', 0], ['cc', 0]]),
-        (['c'], [['r', 0], ['c', 3], ['cc', 0]]),
-        (['cc'], [['r', 0], ['c', 0], ['cc', 2]]),
-        (['cc', 'r'], [['r', 1], ['c', 0], ['cc', 2]]),
+        ('r', [['r', 1], ['c', 0], ['cc', 0]]),
+        ('r', [['r', 0], ['c', 3], ['cc', 0]]),
+        ('cc', [['r', 0], ['c', 0], ['cc', 2]]),
+        ('cc,r', [['r', 1], ['c', 0], ['cc', 2]]),
     ],
 )
 def test_traversal_path(
-    traversal_paths: List[str], counts: List, basic_encoder: TransformerTorchEncoder
+    traversal_paths: str, counts: List, basic_encoder: TransformerTorchEncoder
 ):
     text = 'blah'
     docs = DocumentArray([Document(id='root1', text=text)])
@@ -124,7 +124,7 @@ def test_traversal_path(
 
     basic_encoder.encode(docs=docs, parameters={'traversal_paths': traversal_paths})
     for path, count in counts:
-        embeddings = docs.traverse_flat([path]).get_attributes('embedding')
+        embeddings = docs.traverse_flat(path).get_attributes('embedding')
         assert len(list(filter(lambda x: x is not None, embeddings))) == count
 
 

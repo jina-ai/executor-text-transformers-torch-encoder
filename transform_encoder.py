@@ -23,7 +23,7 @@ class TransformerTorchEncoder(Executor):
         max_length: Optional[int] = None,
         embedding_fn_name: str = '__call__',
         device: str = 'cpu',
-        traversal_paths: Iterable[str] = ('r',),
+        traversal_paths: str = 'r',
         batch_size: int = 32,
         *args,
         **kwargs,
@@ -75,7 +75,7 @@ class TransformerTorchEncoder(Executor):
         :param docs: DocumentArray containing text
         :param parameters: dictionary to define the `traversal_paths` and the
             `batch_size`. For example,
-            `parameters={'traversal_paths': ['r'], 'batch_size': 10}`.
+            `parameters={'traversal_paths': 'r', 'batch_size': 10}`.
         :param kwargs: Additional key value arguments.
         """
         if docs is None:

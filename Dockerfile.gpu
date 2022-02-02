@@ -1,4 +1,4 @@
-FROM jinaai/jina:2-py37-perf
+FROM jinaai/jina:master-py37-perf
 
 COPY gpu_requirements.txt gpu_requirements.txt
 RUN pip install --no-cache-dir -r gpu_requirements.txt

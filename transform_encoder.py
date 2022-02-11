@@ -23,7 +23,7 @@ class TransformerTorchEncoder(Executor):
         max_length: Optional[int] = None,
         embedding_fn_name: str = '__call__',
         device: str = 'cpu',
-        traversal_paths: str = 'r',
+        traversal_paths: str = '@r',
         batch_size: int = 32,
         *args,
         **kwargs,
@@ -67,7 +67,7 @@ class TransformerTorchEncoder(Executor):
         self.model.to(device).eval()
 
     @requests
-    def encode(self, docs: Optional[DocumentArray], parameters: Dict={}, **kwargs):
+    def encode(self, docs: DocumentArray, parameters: Dict={}, **kwargs):
         """
         Encode text data into a ndarray of `D` as dimension, and fill the embedding of
         each Document.
@@ -78,18 +78,16 @@ class TransformerTorchEncoder(Executor):
             `parameters={'traversal_paths': 'r', 'batch_size': 10}`.
         :param kwargs: Additional key value arguments.
         """
-        if docs is None:
-            return
 
-        docs_batch_generator = docs.traverse_flat(
-            traversal_paths=parameters.get('traversal_paths', self.traversal_paths),
-            filter_fn=lambda doc: len(doc.text) > 0
-        ).batch(
-            batch_size=parameters.get('batch_size', self.batch_size),
-        )
+        docs_batch_generator =  DocumentArray(
+            filter(
+                lambda x: bool(x.text),
+                docs[parameters.get('traversal_paths', self.traversal_paths)],
+            )
+        ).batch(batch_size=parameters.get('batch_size', self.batch_size))
 
         for batch in docs_batch_generator:
-            texts = batch.get_attributes('text')
+            texts = batch.texts
 
             with torch.inference_mode():
                 input_tokens = self._generate_input_tokens(texts)
@@ -98,8 +96,8 @@ class TransformerTorchEncoder(Executor):
                     outputs = outputs.cpu().numpy()
                 hidden_states = outputs.hidden_states
                 embeds = self._compute_embedding(hidden_states, input_tokens)
-                for doc, embed in zip(batch, embeds):
-                    doc.embedding = embed
+                batch.embeddings = embeds
+
 
     def _compute_embedding(
         self, hidden_states: Tuple['torch.Tensor'], input_tokens: Dict

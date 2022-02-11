@@ -101,10 +101,10 @@ def test_pooling_strategy(pooling_strategy: str):
 @pytest.mark.parametrize(
     'traversal_paths, counts',
     [
-        ('r', [['r', 1], ['c', 0], ['cc', 0]]),
-        ('c', [['r', 0], ['c', 3], ['cc', 0]]),
-        ('cc', [['r', 0], ['c', 0], ['cc', 2]]),
-        ('cc,r', [['r', 1], ['c', 0], ['cc', 2]]),
+        ('@r', [['@r', 1], ['@c', 0], ['@cc', 0]]),
+        ('@c', [['@r', 0], ['@c', 3], ['@cc', 0]]),
+        ('@cc', [['@r', 0], ['@c', 0], ['@cc', 2]]),
+        ('@cc,r', [['@r', 1], ['@c', 0], ['@cc', 2]]),
     ],
 )
 def test_traversal_path(
@@ -124,9 +124,11 @@ def test_traversal_path(
 
     basic_encoder.encode(docs=docs, parameters={'traversal_paths': traversal_paths})
     for path, count in counts:
-        embeddings = docs.traverse_flat(path).get_attributes('embedding')
-        assert len(list(filter(lambda x: x is not None, embeddings))) == count
-
+        embeddings = docs[path].embeddings
+        if count != 0:
+            assert len([em for em in embeddings if em is not None]) == count
+        else:
+            assert embeddings is None
 
 @pytest.mark.parametrize('batch_size', [1, 2, 4, 8])
 def test_batch_size(basic_encoder: TransformerTorchEncoder, batch_size: int):

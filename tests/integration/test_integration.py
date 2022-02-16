@@ -15,12 +15,11 @@ def test_integration(request_size: int):
     docs = DocumentArray(
         [Document(text='just some random text here') for _ in range(50)]
     )
-    with Flow(return_results=True).add(uses=TransformerTorchEncoder) as flow:
+    with Flow().add(uses=TransformerTorchEncoder) as flow:
         da = flow.post(
             on='/index',
             inputs=docs,
             request_size=request_size,
-            return_results=True,
         )
 
     assert len(da) == 50

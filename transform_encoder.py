@@ -10,6 +10,7 @@ from transformers import AutoModel, AutoTokenizer
 
 from jina import DocumentArray, Executor, requests
 
+import warnings
 
 class TransformerTorchEncoder(Executor):
     """The TransformerTorchEncoder encodes sentences into embeddings using transformers models."""
@@ -23,7 +24,8 @@ class TransformerTorchEncoder(Executor):
         max_length: Optional[int] = None,
         embedding_fn_name: str = '__call__',
         device: str = 'cpu',
-        traversal_paths: str = '@r',
+        access_paths: str = '@r',
+        traversal_paths: Optional[str] = None,
         batch_size: int = 32,
         *args,
         **kwargs,
@@ -41,14 +43,21 @@ class TransformerTorchEncoder(Executor):
             default the max length supported by the model will be used.
         :param embedding_fn_name: Function to call on the model in order to get output
         :param device: Torch device to put the model on (e.g. 'cpu', 'cuda', 'cuda:1')
-        :param traversal_paths: Used in the encode method an define traversal on the
+        :param access_paths: Used in the encode method an define traversal on the
              received `DocumentArray`
+        :param traversal_paths: please use access_paths
         :param batch_size: Defines the batch size for inference on the loaded
             PyTorch model.
         """
         super().__init__(*args, **kwargs)
 
-        self.traversal_paths = traversal_paths
+        if traversal_paths is not None:
+            self.access_paths = traversal_paths
+            warnings.warn("'traversal_paths' will be deprecated in the future, please use 'access_paths'.",
+                          DeprecationWarning,
+                          stacklevel=2)
+        else:
+            self.access_paths = access_paths
         self.batch_size = batch_size
 
         base_tokenizer_model = base_tokenizer_model or pretrained_model_name_or_path
@@ -73,16 +82,16 @@ class TransformerTorchEncoder(Executor):
         each Document.
 
         :param docs: DocumentArray containing text
-        :param parameters: dictionary to define the `traversal_paths` and the
+        :param parameters: dictionary to define the `access_paths` and the
             `batch_size`. For example,
-            `parameters={'traversal_paths': 'r', 'batch_size': 10}`.
+            `parameters={'access_paths': 'r', 'batch_size': 10}`.
         :param kwargs: Additional key value arguments.
         """
 
         docs_batch_generator =  DocumentArray(
             filter(
                 lambda x: bool(x.text),
-                docs[parameters.get('traversal_paths', self.traversal_paths)],
+                docs[parameters.get('access_paths', self.access_paths)],
             )
         ).batch(batch_size=parameters.get('batch_size', self.batch_size))
 
